@@ -9,7 +9,15 @@ if SERVER then
 
 	util.AddNetworkString( "SendClrChat" )
 
-	function FreezeEnt () 
+	function sendClrChat(str)
+		print("[Lags]:", str)
+
+		net.Start( "SendClrChat" )
+		net.WriteString( str )
+		net.Broadcast()
+	end
+
+	function freezeEnt () 
 		local e = ents.GetAll()
 		for i = 1,#e do 
 			local phys = e[i]:GetPhysicsObject()
@@ -30,42 +38,27 @@ if SERVER then
 				if Lags<1 then return end
 					LagInt = math.Clamp( math.Round( 10*((Lags*Delay*100)/(MaxLagTime*1000)) ) , 0, MaxLag )
 				if LagInt >= 1 then
-					net.Start( "SendClrChat" )
-					net.WriteTable( Color(255,255,255) )
-					net.WriteString( "Уровень лагов: "..LagInt )
-					net.Broadcast()
+					sendClrChat( "Уровень лагов: "..LagInt )
 
-					FreezeEnt()
-					net.Start( "SendClrChat" )
-					net.WriteTable( Color(255, 255, 77) )
-					net.WriteString( "Фриз энтити" )
-					net.Broadcast()
+					freezeEnt()
+					sendClrChat( "Все энтити заморожены" )
 				end
 				if LagInt >= 2 then 
 					RunConsoleCommand("wire_expression2_quotatick", "0")
 
-					net.Start( "SendClrChat" )
-					net.WriteTable( Color(255, 77, 77) )
-					net.WriteString( "Остановка E2 чипов" )
-					net.Broadcast()
+					sendClrChat( "Все E2 чипы остановлены" )
 				end
 			else
 				game.CleanUpMap( false, {} )
 
-				net.Start( "SendClrChat" )
-				net.WriteTable( Color(255, 77, 77) )
-				net.WriteString( "Очистка карты" )
-				net.Broadcast()
+				sendClrChat( "Карта очищена" )
 			end
 		else  if Lags>1 then
-				net.Start( "SendClrChat" )
-				net.WriteTable( Color(77, 255, 77) )
-				net.WriteString( "Уровень лагов сброшен" )
-				net.Broadcast()
+				sendClrChat( "Уровень лагов сброшен" )
+				RunConsoleCommand("wire_expression2_quotatick", "50000")
 		end 
 		Lags=0 
 		LagInt = 0
-		RunConsoleCommand("wire_expression2_quotatick", "50000")
 	end
 	end)
 end
@@ -73,12 +66,9 @@ end
 if CLIENT then 
 	function ReceivedClrChat()
 		local prefclr = Color(97,255,73)
-		local pref = "[Lags] "
-
-		local clr = net.ReadTable()
 		local str = net.ReadString()
 
-		chat.AddText( prefclr, pref,  clr, str )
+		chat.AddText( prefclr, "[Lags]: ",  Color(255,255,255), str )
 	end
 
 	net.Receive("SendClrChat", ReceivedClrChat)
